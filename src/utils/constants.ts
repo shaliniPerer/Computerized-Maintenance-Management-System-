@@ -2,6 +2,7 @@
 export const ROUTES = {
   HOME: 'home',
   LOGIN: 'login',
+  SIGNUP: 'signup',
   DASHBOARD: 'dashboard',
   WORK_ORDERS: 'workorders',
   PM: 'pm',

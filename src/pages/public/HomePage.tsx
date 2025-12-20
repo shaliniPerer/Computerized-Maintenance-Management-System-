@@ -17,7 +17,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <Wrench className="text-blue-600" size={32} />
             <span className="text-2xl font-bold text-gray-800">MaintenancePro</span>
           </div>
-          <Button onClick={() => onNavigate('login')}>Login</Button>
+          <div className="flex justify-center space-x-4">
+            <Button size="lg" onClick={() => onNavigate('signup')}>
+              Get Started
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => onNavigate('login')}>
+              Sign In
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -27,7 +34,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             Streamline Your Maintenance Operations
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Comprehensive work order management and preventive maintenance scheduling system 
+            Comprehensive work order management and preventive maintenance scheduling system
             designed for enterprise facilities management
           </p>
           <div className="flex justify-center space-x-4">
@@ -41,7 +48,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <Briefcase className="text-blue-600 mb-4" size={48} />
             <h3 className="text-2xl font-bold text-gray-800 mb-3">Work Order Management</h3>
             <p className="text-gray-600">
-              Create, track, and manage work orders with priority levels, status tracking, 
+              Create, track, and manage work orders with priority levels, status tracking,
               and technician assignment
             </p>
           </div>
@@ -49,7 +56,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <Calendar className="text-green-600 mb-4" size={48} />
             <h3 className="text-2xl font-bold text-gray-800 mb-3">Preventive Maintenance</h3>
             <p className="text-gray-600">
-              Schedule recurring maintenance tasks, set reminders, and ensure equipment 
+              Schedule recurring maintenance tasks, set reminders, and ensure equipment
               reliability with preventive care
             </p>
           </div>
@@ -57,7 +64,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <Bell className="text-orange-600 mb-4" size={48} />
             <h3 className="text-2xl font-bold text-gray-800 mb-3">Real-time Notifications</h3>
             <p className="text-gray-600">
-              Stay informed with instant alerts for new work orders, status updates, 
+              Stay informed with instant alerts for new work orders, status updates,
               and upcoming maintenance schedules
             </p>
           </div>

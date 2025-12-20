@@ -1,4 +1,4 @@
-export type NotificationType = 'work_order' | 'pm' | 'status' | 'alert';
+export type NotificationType = 'work_order' | 'pm' | 'status' | 'alert'|'signup' ;
 
 export interface Notification {
   id: number;

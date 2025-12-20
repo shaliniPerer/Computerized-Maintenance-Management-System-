@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit2 } from 'lucide-react';
 import { Button, Badge, Modal, Alert } from '@components/common';
-import { PMSchedule } from '@models/pm.types';
-import { mockPMSchedules } from '../../data/mockPMSchedules';
 import { PMForm } from './PMForm';
 import { PMChecklist } from './PMChecklist';
+import { pmScheduleService } from 'services';
 import { getPMStatusColor } from '@utils/helpers';
+import { PMSchedule } from '@models/pm.types';
 
 export const PMList: React.FC = () => {
-  const [schedules] = useState<PMSchedule[]>(mockPMSchedules);
+  const [schedules, setSchedules] = useState<PMSchedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedPM, setSelectedPM] = useState<PMSchedule | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'checklist'>('list');
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    fetchPMSchedules();
+  }, []);
+
+  const fetchPMSchedules = async () => {
+    try {
+      setIsLoading(true);
+      const response = await pmScheduleService.getAll({ limit: 100 });
+      if (response.success) {
+        setSchedules(response.data);
+      }
+    } catch (error: any) {
+      setAlert({ 
+        message: error.response?.data?.message || 'Failed to load PM schedules', 
+        type: 'error' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleViewChecklist = (pm: PMSchedule) => {
     setSelectedPM(pm);
@@ -29,19 +51,30 @@ export const PMList: React.FC = () => {
     setOpenDialog(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setOpenDialog(false);
     setAlert({ message: 'PM schedule saved successfully!', type: 'success' });
     setTimeout(() => setAlert(null), 3000);
+    await fetchPMSchedules();
   };
 
   const handleBackToList = () => {
     setViewMode('list');
     setSelectedPM(null);
+    fetchPMSchedules();
   };
 
   if (viewMode === 'checklist' && selectedPM) {
     return <PMChecklist schedule={selectedPM} onBack={handleBackToList} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-12 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading PM schedules...</p>
+      </div>
+    );
   }
 
   return (
@@ -56,55 +89,65 @@ export const PMList: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PM ID</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Task Title</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Asset</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Frequency</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Next Due</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {schedules.map(pm => (
-                <tr key={pm.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{pm.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{pm.title}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{pm.asset}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{pm.frequency}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{pm.nextDate}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{pm.assignedTo}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <Badge color={getPMStatusColor(pm.status)}>{pm.status}</Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewChecklist(pm)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(pm)}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {schedules.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <p className="text-gray-600 text-lg">No PM schedules found</p>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PM ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Task Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Asset</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Frequency</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Next Due</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {schedules.map(pm => (
+                  <tr key={pm._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{pm.pmId}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{pm.title}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{pm.asset}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{pm.frequency}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {new Date(pm.nextDueDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{pm.assignedToName || 'Unassigned'}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <Badge color={getPMStatusColor(pm.status)}>{pm.status}</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleViewChecklist(pm)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="View Checklist"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(pm)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={openDialog}

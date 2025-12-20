@@ -15,7 +15,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -24,11 +24,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
       return;
     }
 
-    const result = login({ email, password });
-    if (result.success) {
-      onNavigate('dashboard');
-    } else {
-      setError(result.error || 'Login failed');
+    try {
+      const result = await login({ email, password });
+      if (result.success) {
+        onNavigate('dashboard');
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     }
   };
 
@@ -102,6 +106,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
           <p className="text-xs text-gray-600">Admin: admin@maintenance.com / admin123</p>
           <p className="text-xs text-gray-600">Tech: tech@maintenance.com / tech123</p>
           <p className="text-xs text-gray-600">Staff: staff@maintenance.com / staff123</p>
+        </div>
+
+        {/* ADD THIS NEW SECTION */}
+        <div className="text-center mt-4">
+          <p className="text-gray-600 text-sm">
+            Don't have an account?{' '}
+            <button
+              onClick={() => onNavigate('signup')}
+              className="text-blue-600 hover:underline font-semibold"
+            >
+              Sign Up
+            </button>
+          </p>
         </div>
 
         <div className="text-center mt-4">

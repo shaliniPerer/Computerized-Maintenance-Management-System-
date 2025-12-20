@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { Plus, Eye, Edit2, Search, Filter, Wind, Zap, Droplet, Flame, Wrench } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Eye, Edit2, Search, Filter, Wind, Zap, Droplet, Flame, Wrench, Briefcase } from 'lucide-react';
 import { Button, Badge, Select, Modal, Alert } from '@components/common';
-import { mockWorkOrders } from '../../data/mockWorkOrders';
 import { WorkOrderForm } from './WorkOrderForm';
 import { WorkOrderDetail } from './WorkOrderDetail';
+import { WorkOrder, WorkOrderCategory } from '@models/workOrder.types';
+import { workOrderService } from 'services';
 import { CATEGORIES, PRIORITIES, STATUSES } from '@utils/constants';
 import { getPriorityColor, getStatusColor } from '@utils/helpers';
-import { WorkOrderCategory,WorkOrder } from '@models/workOrder.types';
 
 export const WorkOrdersList: React.FC = () => {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(mockWorkOrders);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
@@ -18,10 +18,46 @@ export const WorkOrdersList: React.FC = () => {
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+
+  useEffect(() => {
+    fetchWorkOrders();
+  }, [filterCategory, filterPriority, filterStatus, searchTerm]);
+
+  const fetchWorkOrders = async () => {
+    try {
+      setIsLoading(true);
+      const response = await workOrderService.getAll({
+        category: filterCategory !== 'All' ? filterCategory : undefined,
+        priority: filterPriority !== 'All' ? filterPriority : undefined,
+        status: filterStatus !== 'All' ? filterStatus : undefined,
+        search: searchTerm || undefined,
+        page: pagination.page,
+        limit: 10
+      });
+
+      if (response.success) {
+        setWorkOrders(response.data);
+        setPagination({
+          page: response.page,
+          pages: response.pages,
+          total: response.total
+        });
+      }
+    } catch (error: any) {
+      setAlert({ 
+        message: error.response?.data?.message || 'Failed to load work orders', 
+        type: 'error' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredWorkOrders = workOrders.filter(wo => {
     const matchesSearch = wo.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         wo.id.toLowerCase().includes(searchTerm.toLowerCase());
+                         wo.workOrderId.toLowerCase().includes(searchTerm.toLowerCase()); // Changed from wo.id
     const matchesCategory = filterCategory === 'All' || wo.category === filterCategory;
     const matchesPriority = filterPriority === 'All' || wo.priority === filterPriority;
     const matchesStatus = filterStatus === 'All' || wo.status === filterStatus;
@@ -53,15 +89,17 @@ export const WorkOrdersList: React.FC = () => {
     setOpenDialog(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setOpenDialog(false);
     setAlert({ message: 'Work order saved successfully!', type: 'success' });
     setTimeout(() => setAlert(null), 3000);
+    await fetchWorkOrders();
   };
 
   const handleBackToList = () => {
     setViewMode('list');
     setSelectedWO(null);
+    fetchWorkOrders();
   };
 
   if (viewMode === 'detail' && selectedWO) {
@@ -114,62 +152,107 @@ export const WorkOrdersList: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Priority</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredWorkOrders.map(wo => (
-                <tr key={wo.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{wo.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{wo.title}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      {getCategoryIcon(wo.category)}
-                      <span>{wo.category}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <Badge color={getPriorityColor(wo.priority)}>{wo.priority}</Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <Badge color={getStatusColor(wo.status)}>{wo.status}</Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{wo.assignedTo}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{wo.createdDate}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewDetails(wo)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(wo)}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading work orders...</p>
         </div>
-      </div>
+      ) : filteredWorkOrders.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <Briefcase className="text-gray-400 mx-auto mb-4" size={64} />
+          <p className="text-gray-600 text-lg">No work orders found</p>
+          <p className="text-gray-500 text-sm mt-2">Try adjusting your filters or create a new work order</p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Priority</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredWorkOrders.map(wo => (
+                    <tr key={wo._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{wo.workOrderId}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{wo.title}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          {getCategoryIcon(wo.category)}
+                          <span>{wo.category}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <Badge color={getPriorityColor(wo.priority)}>{wo.priority}</Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <Badge color={getStatusColor(wo.status)}>{wo.status}</Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{wo.assignedToName || 'Unassigned'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {new Date(wo.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleViewDetails(wo)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(wo)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Edit"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {pagination.pages > 1 && (
+            <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-md p-4">
+              <div className="text-sm text-gray-700">
+                Showing page {pagination.page} of {pagination.pages} ({pagination.total} total)
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pagination.page === 1}
+                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pagination.page === pagination.pages}
+                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <Modal
         isOpen={openDialog}
@@ -177,7 +260,11 @@ export const WorkOrdersList: React.FC = () => {
         title={selectedWO ? 'Edit Work Order' : 'Create New Work Order'}
         size="lg"
       >
-        <WorkOrderForm workOrder={selectedWO} onSave={handleSave} onCancel={() => setOpenDialog(false)} />
+        <WorkOrderForm 
+          workOrder={selectedWO} 
+          onSave={handleSave} 
+          onCancel={() => setOpenDialog(false)} 
+        />
       </Modal>
     </div>
   );

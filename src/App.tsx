@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout } from './components/layout';
-import { HomePage, LoginPage } from '@pages/public';
+import { HomePage, LoginPage, SignupPage } from '@pages/public';
 import { Dashboard } from '@pages/dashboard';
 import { WorkOrdersList } from '@pages/workOrders';
 import { PreventiveMaintenance } from '@pages/preventiveMaintenance';
@@ -29,9 +29,11 @@ const AppContent: React.FC = () => {
       if (currentPage === ROUTES.LOGIN) {
         return <LoginPage onNavigate={setCurrentPage} />;
       }
+      if (currentPage === 'signup') { // Add signup route
+        return <SignupPage onNavigate={setCurrentPage} />;
+      }
       return <HomePage onNavigate={setCurrentPage} />;
     }
-
     switch (currentPage) {
       case ROUTES.DASHBOARD:
         return <Dashboard />;

@@ -84,7 +84,10 @@ exports.createPMSchedule = async (req, res) => {
   try {
     const { title, description, asset, frequency, nextDueDate, assignedTo, checklist } = req.body;
 
+     const pmId = `PM-${Date.now()}`;
+
     const pmSchedule = await PMSchedule.create({
+       pmId,
       title,
       description,
       asset,

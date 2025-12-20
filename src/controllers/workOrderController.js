@@ -8,7 +8,6 @@ exports.getAllWorkOrders = async (req, res) => {
   try {
     const { category, priority, status, search, page = 1, limit = 10 } = req.query;
 
-    // Build filter
     const filter = {};
     if (category && category !== 'All') filter.category = category;
     if (priority && priority !== 'All') filter.priority = priority;
@@ -21,7 +20,6 @@ exports.getAllWorkOrders = async (req, res) => {
       ];
     }
 
-    // Pagination
     const skip = (page - 1) * limit;
 
     const workOrders = await WorkOrder.find(filter)
@@ -61,21 +59,12 @@ exports.getWorkOrder = async (req, res) => {
       .populate('activityLog.user', 'name');
 
     if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
+      return res.status(404).json({ success: false, message: 'Work order not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(200).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -84,8 +73,10 @@ exports.getWorkOrder = async (req, res) => {
 // @access  Private
 exports.createWorkOrder = async (req, res) => {
   try {
+    console.log('Create Work Order Request Body:', req.body);
     const { title, description, category, priority, location, assignedTo } = req.body;
 
+    // Create and save new work order
     const workOrder = await WorkOrder.create({
       title,
       description,
@@ -103,7 +94,7 @@ exports.createWorkOrder = async (req, res) => {
       }]
     });
 
-    // Populate fields
+    // Populate fields for response
     await workOrder.populate('assignedTo', 'name email');
     await workOrder.populate('createdBy', 'name email');
 
@@ -119,15 +110,10 @@ exports.createWorkOrder = async (req, res) => {
       });
     }
 
-    res.status(201).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(201).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Error creating work order:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -137,15 +123,8 @@ exports.createWorkOrder = async (req, res) => {
 exports.updateWorkOrder = async (req, res) => {
   try {
     let workOrder = await WorkOrder.findById(req.params.id);
+    if (!workOrder) return res.status(404).json({ success: false, message: 'Work order not found' });
 
-    if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
-    }
-
-    // Add activity log entry
     const activityEntry = {
       action: 'updated',
       user: req.user.id,
@@ -156,25 +135,16 @@ exports.updateWorkOrder = async (req, res) => {
 
     req.body.activityLog = [...workOrder.activityLog, activityEntry];
 
-    workOrder = await WorkOrder.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
-    ).populate('assignedTo', 'name email')
-     .populate('createdBy', 'name email');
+    workOrder = await WorkOrder.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    })
+      .populate('assignedTo', 'name email')
+      .populate('createdBy', 'name email');
 
-    res.status(200).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(200).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -185,26 +155,14 @@ exports.updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const workOrder = await WorkOrder.findById(req.params.id);
-
-    if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
-    }
+    if (!workOrder) return res.status(404).json({ success: false, message: 'Work order not found' });
 
     const oldStatus = workOrder.status;
     workOrder.status = status;
 
-    // Update completion/verification dates
-    if (status === 'Completed' && !workOrder.completedAt) {
-      workOrder.completedAt = Date.now();
-    }
-    if (status === 'Verified' && !workOrder.verifiedAt) {
-      workOrder.verifiedAt = Date.now();
-    }
+    if (status === 'Completed' && !workOrder.completedAt) workOrder.completedAt = Date.now();
+    if (status === 'Verified' && !workOrder.verifiedAt) workOrder.verifiedAt = Date.now();
 
-    // Add activity log
     workOrder.activityLog.push({
       action: 'status_changed',
       user: req.user.id,
@@ -215,7 +173,6 @@ exports.updateStatus = async (req, res) => {
 
     await workOrder.save();
 
-    // Create notification for assigned user
     if (workOrder.assignedTo) {
       await Notification.create({
         user: workOrder.assignedTo,
@@ -227,15 +184,9 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(200).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -246,21 +197,9 @@ exports.addNote = async (req, res) => {
   try {
     const { text } = req.body;
     const workOrder = await WorkOrder.findById(req.params.id);
+    if (!workOrder) return res.status(404).json({ success: false, message: 'Work order not found' });
 
-    if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
-    }
-
-    workOrder.notes.push({
-      user: req.user.id,
-      userName: req.user.name,
-      text,
-      createdAt: Date.now()
-    });
-
+    workOrder.notes.push({ user: req.user.id, userName: req.user.name, text, createdAt: Date.now() });
     workOrder.activityLog.push({
       action: 'note_added',
       user: req.user.id,
@@ -270,16 +209,9 @@ exports.addNote = async (req, res) => {
     });
 
     await workOrder.save();
-
-    res.status(200).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(200).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -289,25 +221,12 @@ exports.addNote = async (req, res) => {
 exports.deleteWorkOrder = async (req, res) => {
   try {
     const workOrder = await WorkOrder.findById(req.params.id);
-
-    if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
-    }
+    if (!workOrder) return res.status(404).json({ success: false, message: 'Work order not found' });
 
     await workOrder.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: 'Work order deleted successfully'
-    });
+    res.status(200).json({ success: true, message: 'Work order deleted successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -317,20 +236,8 @@ exports.deleteWorkOrder = async (req, res) => {
 exports.uploadAttachment = async (req, res) => {
   try {
     const workOrder = await WorkOrder.findById(req.params.id);
-
-    if (!workOrder) {
-      return res.status(404).json({
-        success: false,
-        message: 'Work order not found'
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please upload a file'
-      });
-    }
+    if (!workOrder) return res.status(404).json({ success: false, message: 'Work order not found' });
+    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a file' });
 
     const attachment = {
       filename: req.file.filename,
@@ -343,7 +250,6 @@ exports.uploadAttachment = async (req, res) => {
     };
 
     workOrder.attachments.push(attachment);
-
     workOrder.activityLog.push({
       action: 'attachment_added',
       user: req.user.id,
@@ -353,15 +259,8 @@ exports.uploadAttachment = async (req, res) => {
     });
 
     await workOrder.save();
-
-    res.status(200).json({
-      success: true,
-      data: workOrder
-    });
+    res.status(200).json({ success: true, data: workOrder });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

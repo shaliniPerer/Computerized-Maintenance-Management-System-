@@ -101,12 +101,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
           <Button type="submit" className="w-full">Sign In</Button>
         </form>
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm text-gray-700 font-semibold mb-2">Demo Credentials:</p>
-          <p className="text-xs text-gray-600">Admin: admin@maintenance.com / admin123</p>
-          <p className="text-xs text-gray-600">Tech: tech@maintenance.com / tech123</p>
-          <p className="text-xs text-gray-600">Staff: staff@maintenance.com / staff123</p>
-        </div>
+       
 
         {/* ADD THIS NEW SECTION */}
         <div className="text-center mt-4">

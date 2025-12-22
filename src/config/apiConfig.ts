@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  BASE_URL: process.env.REACT_APP_API_URL || 'REACT_APP_API_URL=https://maintenance-pro-backend.vercel.app/api',
   TIMEOUT: parseInt(process.env.REACT_APP_API_TIMEOUT || '10000'),
   HEADERS: {
     'Content-Type': 'application/json',

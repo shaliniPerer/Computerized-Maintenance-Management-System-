@@ -39,7 +39,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </p>
           <div className="flex justify-center space-x-4">
             <Button size="lg" onClick={() => onNavigate('login')}>Get Started</Button>
-            <Button size="lg" variant="outline">Learn More</Button>
+            <Button size="lg" variant="outline" onClick={() => onNavigate('signup')}>Learn More</Button>
           </div>
         </div>
 

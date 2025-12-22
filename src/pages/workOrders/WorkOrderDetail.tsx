@@ -127,7 +127,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({ workOrder: ini
             <div className="space-y-2 text-gray-600">
               <p><strong>Category:</strong> {currentWO.category}</p>
               <p><strong>Location:</strong> {currentWO.location}</p>
-              <p><strong>Assigned To:</strong> {currentWO.assignedToName || 'Unassigned'}</p>
+              <p><strong>Assigned To:</strong> {currentWO.assignedTo?.name || 'Unassigned'}</p>
               <p><strong>Created:</strong> {new Date(currentWO.createdAt).toLocaleString()}</p>
             </div>
           </div>

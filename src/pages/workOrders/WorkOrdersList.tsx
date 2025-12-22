@@ -23,7 +23,7 @@ export const WorkOrdersList: React.FC = () => {
 
   useEffect(() => {
     fetchWorkOrders();
-  }, [filterCategory, filterPriority, filterStatus, searchTerm]);
+  }, [filterCategory, filterPriority, filterStatus, searchTerm, pagination.page]);
 
   const fetchWorkOrders = async () => {
     try {
@@ -46,18 +46,16 @@ export const WorkOrdersList: React.FC = () => {
         });
       }
     } catch (error: any) {
-      setAlert({ 
-        message: error.response?.data?.message || 'Failed to load work orders', 
-        type: 'error' 
-      });
+      setAlert({ message: error.response?.data?.message || 'Failed to load work orders', type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const filteredWorkOrders = workOrders.filter(wo => {
-    const matchesSearch = wo.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         wo.workOrderId.toLowerCase().includes(searchTerm.toLowerCase()); // Changed from wo.id
+    const matchesSearch =
+      wo.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      wo.workOrderId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'All' || wo.category === filterCategory;
     const matchesPriority = filterPriority === 'All' || wo.priority === filterPriority;
     const matchesStatus = filterStatus === 'All' || wo.status === filterStatus;
@@ -89,11 +87,23 @@ export const WorkOrdersList: React.FC = () => {
     setOpenDialog(true);
   };
 
-  const handleSave = async () => {
-    setOpenDialog(false);
-    setAlert({ message: 'Work order saved successfully!', type: 'success' });
-    setTimeout(() => setAlert(null), 3000);
-    await fetchWorkOrders();
+  const handleSave = async (data: any) => {
+    try {
+      if (selectedWO) {
+        await workOrderService.update(selectedWO._id, data);
+      } else {
+        await workOrderService.create(data);
+      }
+      setOpenDialog(false);
+      setAlert({ message: 'Work order saved successfully!', type: 'success' });
+      setTimeout(() => setAlert(null), 3000);
+      fetchWorkOrders();
+    } catch (error: any) {
+      setAlert({
+        message: error.response?.data?.message || 'Failed to save work order',
+        type: 'error'
+      });
+    }
   };
 
   const handleBackToList = () => {
@@ -109,7 +119,7 @@ export const WorkOrdersList: React.FC = () => {
   return (
     <div className="p-6">
       {alert && <Alert message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
-      
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Work Orders</h1>
         <Button onClick={handleCreateNew}>
@@ -118,6 +128,7 @@ export const WorkOrdersList: React.FC = () => {
         </Button>
       </div>
 
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="relative">
@@ -152,6 +163,7 @@ export const WorkOrdersList: React.FC = () => {
         </div>
       </div>
 
+      {/* Table */}
       {isLoading ? (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -164,94 +176,58 @@ export const WorkOrdersList: React.FC = () => {
           <p className="text-gray-500 text-sm mt-2">Try adjusting your filters or create a new work order</p>
         </div>
       ) : (
-        <>
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Priority</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Priority</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Assigned To</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredWorkOrders.map(wo => (
+                  <tr key={wo._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{wo.workOrderId}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{wo.title}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        {getCategoryIcon(wo.category)}
+                        <span>{wo.category}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <Badge color={getPriorityColor(wo.priority)}>{wo.priority}</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <Badge color={getStatusColor(wo.status)}>{wo.status}</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {wo.assignedTo ? wo.assignedTo.name : 'Unassigned'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{new Date(wo.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleViewDetails(wo)} className="text-blue-600 hover:text-blue-800" title="View Details">
+                          <Eye size={18} />
+                        </button>
+                        <button onClick={() => handleEdit(wo)} className="text-green-600 hover:text-green-800" title="Edit">
+                          <Edit2 size={18} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredWorkOrders.map(wo => (
-                    <tr key={wo._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{wo.workOrderId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{wo.title}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          {getCategoryIcon(wo.category)}
-                          <span>{wo.category}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <Badge color={getPriorityColor(wo.priority)}>{wo.priority}</Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <Badge color={getStatusColor(wo.status)}>{wo.status}</Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{wo.assignedToName || 'Unassigned'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {new Date(wo.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewDetails(wo)}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(wo)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {pagination.pages > 1 && (
-            <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-md p-4">
-              <div className="text-sm text-gray-700">
-                Showing page {pagination.page} of {pagination.pages} ({pagination.total} total)
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={pagination.page === 1}
-                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={pagination.page === pagination.pages}
-                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
 
       <Modal
@@ -260,11 +236,7 @@ export const WorkOrdersList: React.FC = () => {
         title={selectedWO ? 'Edit Work Order' : 'Create New Work Order'}
         size="lg"
       >
-        <WorkOrderForm 
-          workOrder={selectedWO} 
-          onSave={handleSave} 
-          onCancel={() => setOpenDialog(false)} 
-        />
+        <WorkOrderForm workOrder={selectedWO} onSave={handleSave} onCancel={() => setOpenDialog(false)} />
       </Modal>
     </div>
   );

@@ -20,7 +20,10 @@ export const PMForm: React.FC<PMFormProps> = ({ schedule, onSave, onCancel }) =>
     asset: schedule?.asset || '',
     frequency: schedule?.frequency || 'Monthly',
     nextDueDate: schedule?.nextDueDate ? new Date(schedule.nextDueDate).toISOString().split('T')[0] : '',
-    assignedTo: schedule?.assignedTo || '',
+    assignedTo: typeof schedule?.assignedTo === 'string' 
+    ? schedule.assignedTo 
+    : schedule?.assignedTo?._id || '',
+
     checklist: schedule?.checklist || []
   });
 

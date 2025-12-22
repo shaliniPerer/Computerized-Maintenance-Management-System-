@@ -7,6 +7,11 @@ import { pmScheduleService } from 'services';
 import { getPMStatusColor } from '@utils/helpers';
 import { PMSchedule } from '@models/pm.types';
 
+interface AssignedUser {
+  _id: string;
+  name: string;
+}
+
 export const PMList: React.FC = () => {
   const [schedules, setSchedules] = useState<PMSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,9 +32,9 @@ export const PMList: React.FC = () => {
         setSchedules(response.data);
       }
     } catch (error: any) {
-      setAlert({ 
-        message: error.response?.data?.message || 'Failed to load PM schedules', 
-        type: 'error' 
+      setAlert({
+        message: error.response?.data?.message || 'Failed to load PM schedules',
+        type: 'error'
       });
     } finally {
       setIsLoading(false);
@@ -78,7 +83,7 @@ export const PMList: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="p-6">
       {alert && <Alert message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
 
       <div className="flex justify-between items-center mb-6">
@@ -116,10 +121,15 @@ export const PMList: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-gray-900">{pm.title}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{pm.asset}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{pm.frequency}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{new Date(pm.nextDueDate).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {new Date(pm.nextDueDate).toLocaleDateString()}
+                      {pm.assignedTo
+                        ? typeof pm.assignedTo === 'string'
+                          ? pm.assignedTo  
+                          : pm.assignedTo.name 
+                        : 'Unassigned'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{pm.assignedToName || 'Unassigned'}</td>
+
                     <td className="px-6 py-4 text-sm">
                       <Badge color={getPMStatusColor(pm.status)}>{pm.status}</Badge>
                     </td>

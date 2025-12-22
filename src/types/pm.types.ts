@@ -1,6 +1,11 @@
 export type PMFrequency = 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Annually';
 export type PMStatus = 'Scheduled' | 'Upcoming' | 'Overdue' | 'Completed';
 
+export interface AssignedUser {
+  _id: string;
+  name: string;
+}
+
 export interface PMSchedule {
   _id: string;
   pmId: string;
@@ -10,7 +15,7 @@ export interface PMSchedule {
   frequency: PMFrequency;
   nextDueDate: Date;
   lastCompletedDate?: Date;
-  assignedTo?: string;
+  assignedTo?: AssignedUser | string | null;
   assignedToName?: string;
   status: PMStatus;
   checklist: Array<{

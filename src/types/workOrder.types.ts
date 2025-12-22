@@ -11,7 +11,11 @@ export interface WorkOrder {
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
   location: string;
-  assignedTo?: string;
+  assignedTo?: {
+    _id: string;
+    name: string;
+    email?: string;
+  } | null;
   assignedToName?: string;
   createdBy: string;
   notes: Array<{

@@ -28,7 +28,7 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
         completionNotes,
         checklist
       });
-      
+
       if (response.success) {
         setAlert({ message: 'PM task completed successfully!', type: 'success' });
         setTimeout(() => {
@@ -37,9 +37,9 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
         }, 2000);
       }
     } catch (error: any) {
-      setAlert({ 
-        message: error.response?.data?.message || 'Failed to complete PM task', 
-        type: 'error' 
+      setAlert({
+        message: error.response?.data?.message || 'Failed to complete PM task',
+        type: 'error'
       });
     } finally {
       setIsCompleting(false);
@@ -49,7 +49,7 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
   return (
     <div className="p-6">
       {alert && <Alert message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
-      
+
       <button onClick={onBack} className="mb-4 text-blue-600 hover:underline flex items-center gap-2">
         ← Back to PM Schedules
       </button>
@@ -64,7 +64,14 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
             <div className="space-y-2 text-gray-600">
               <p><strong>Frequency:</strong> {schedule.frequency}</p>
               <p><strong>Next Due Date:</strong> {new Date(schedule.nextDueDate).toLocaleDateString()}</p>
-              <p><strong>Assigned To:</strong> {schedule.assignedToName || 'Unassigned'}</p>
+              <p>
+                <strong>Assigned To:</strong> {
+                  typeof schedule.assignedTo === 'string'
+                    ? schedule.assignedTo
+                    : schedule.assignedTo?.name || 'Unassigned'
+                }
+              </p>
+
               <p><strong>Status:</strong> <Badge color={getPMStatusColor(schedule.status)}>{schedule.status}</Badge></p>
             </div>
           </div>
@@ -80,9 +87,9 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
             {checklist.length > 0 ? (
               checklist.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input 
-                    type="checkbox" 
-                    className="w-5 h-5 cursor-pointer" 
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 cursor-pointer"
                     checked={item.completed}
                     onChange={() => handleChecklistChange(idx)}
                   />
@@ -106,8 +113,8 @@ export const PMChecklist: React.FC<PMChecklistProps> = ({ schedule, onBack }) =>
             rows={4}
             placeholder="Add notes about the maintenance performed..."
           />
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             className="mt-2"
             onClick={handleComplete}
             disabled={isCompleting}

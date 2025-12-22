@@ -1,8 +1,6 @@
 export const API_CONFIG = {
-  BASE_URL:
-    process.env.REACT_APP_API_URL ||
-    'https://calm-wholeness-production-c9b5.up.railway.app',
-  TIMEOUT: parseInt(process.env.REACT_APP_API_TIMEOUT || '10000'),
+  BASE_URL: 'https://calm-wholeness-production-c9b5.up.railway.app',
+  TIMEOUT: 10000,
   HEADERS: {
     'Content-Type': 'application/json',
   },

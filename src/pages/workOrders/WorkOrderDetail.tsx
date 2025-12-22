@@ -230,7 +230,7 @@ export const WorkOrderDetail: React.FC<WorkOrderDetailProps> = ({ workOrder: ini
                     </div>
                   </div>
                   <a
-                    href={`https://maintainance-pro-ultm.vercel.app/${file.path}`}
+                    href={`https://calm-wholeness-production-c9b5.up.railway.app/${file.path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800"

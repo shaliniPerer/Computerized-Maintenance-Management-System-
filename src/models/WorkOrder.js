@@ -4,7 +4,8 @@ const workOrderSchema = new mongoose.Schema({
   workOrderId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    default: () => `WO-${Date.now()}` // safer unique ID
   },
   title: {
     type: String,
@@ -49,16 +50,10 @@ const workOrderSchema = new mongoose.Schema({
     required: true
   },
   notes: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName: String,
     text: String,
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
+    createdAt: { type: Date, default: Date.now }
   }],
   attachments: [{
     filename: String,
@@ -66,41 +61,18 @@ const workOrderSchema = new mongoose.Schema({
     path: String,
     mimetype: String,
     size: Number,
-    uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    uploadedAt: { type: Date, default: Date.now }
   }],
   activityLog: [{
     action: String,
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName: String,
     details: String,
-    timestamp: {
-      type: Date,
-      default: Date.now
-    }
+    timestamp: { type: Date, default: Date.now }
   }],
   completedAt: Date,
   verifiedAt: Date
-}, {
-  timestamps: true
-});
-
-// Auto-generate workOrderId
-workOrderSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    const count = await mongoose.model('WorkOrder').countDocuments();
-    this.workOrderId = `WO-${String(count + 1).padStart(4, '0')}`;
-  }
-  next();
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('WorkOrder', workOrderSchema);

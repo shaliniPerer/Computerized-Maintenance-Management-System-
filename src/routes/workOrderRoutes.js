@@ -1,32 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getAllWorkOrders,
-  getWorkOrder,
-  createWorkOrder,
-  updateWorkOrder,
-  updateStatus,
-  addNote,
-  deleteWorkOrder,
-  uploadAttachment
-} = require('../controllers/workOrderController');
+
+const workOrderController = require('../controllers/workOrderController');
+
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { validate, workOrderRules } = require('../middleware/validator');
 const upload = require('../middleware/upload');
 
 router
   .route('/')
-  .get(protect, getAllWorkOrders)
-  .post(protect, validate(workOrderRules), createWorkOrder);
+  .get(protect, workOrderController.getAllWorkOrders)
+  .post(protect, workOrderController.createWorkOrder);
 
 router
   .route('/:id')
-  .get(protect, getWorkOrder)
-  .put(protect, updateWorkOrder)
-  .delete(protect, authorize('Admin'), deleteWorkOrder);
+  .get(protect, workOrderController.getWorkOrder)
+  .put(protect, workOrderController.updateWorkOrder)
+  .delete(protect, authorize('Admin'), workOrderController.deleteWorkOrder);
 
-router.patch('/:id/status', protect, updateStatus);
-router.post('/:id/notes', protect, addNote);
-router.post('/:id/attachments', protect, upload.single('file'), uploadAttachment);
+router.patch('/:id/status', protect, workOrderController.updateStatus);
+router.post('/:id/notes', protect, workOrderController.addNote);
+router.post(
+  '/:id/attachments',
+  protect,
+  upload.single('file'),
+  workOrderController.uploadAttachment
+);
 
 module.exports = router;

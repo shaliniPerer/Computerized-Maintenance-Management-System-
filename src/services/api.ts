@@ -6,7 +6,7 @@ class ApiService {
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: API_CONFIG.BASE_URL,
+      baseURL: API_CONFIG.BASE_URL, 
       timeout: API_CONFIG.TIMEOUT,
       headers: API_CONFIG.HEADERS,
     });
@@ -15,7 +15,7 @@ class ApiService {
   }
 
   private setupInterceptors(): void {
-    // Request interceptor - Add auth token to all requests
+    // Request interceptor - add auth token
     this.axiosInstance.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('token');
@@ -24,17 +24,14 @@ class ApiService {
         }
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
-    // Response interceptor - Handle errors globally
+    // Response interceptor - handle errors globally
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Unauthorized - clear token and redirect to login
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
@@ -76,9 +73,7 @@ class ApiService {
     formData.append(fieldName, file);
 
     const response: AxiosResponse<T> = await this.axiosInstance.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
   }
